@@ -16,7 +16,6 @@ class PerguntaRequest(BaseModel):
 
 def limpar_nome_fonte(nome_arquivo: str) -> str:
     """
-    BOA PRÁTICA: Função utilitária posicionada antes das rotas.
     Remove a extensão do arquivo (.pdf) e sufixos duplicados
     tipo " (1)" que o Windows/navegador adiciona em downloads repetidos.
     """
@@ -56,7 +55,7 @@ REGRAS DE FORMATO (siga rigorosamente):
 - Não use markdown: sem títulos (#), sem negrito (**), sem listas com marcadores.
 - Não inclua nenhum aviso legal, disclaimer ou recomendação de "consulte um médico" — isso é tratado separadamente pela aplicação.
 - Não inclua marcações de fonte dentro do texto (ex: 【fonte: ...】, [1], etc.) — as fontes já são exibidas separadamente pelo sistema.
-
+- Se a resposta para a pergunta NÃO estiver no contexto acima — seja porque a pergunta é sobre outro assunto (ex: culinária, esportes), seja porque o contexto simplesmente não cobre esse ponto — comece sua resposta EXATAMENTE com a palavra "SEM_CONTEXTO:" seguida de uma frase curta e educada explicando que não há essa informação disponível.
 
 CONTEXTO:
 {contexto}
@@ -70,11 +69,16 @@ RESPOSTA:"""
         messages=[{"role": "user", "content": prompt}],
         temperature=0.3,
     )
-    texto_resposta = resposta.choices[0].message.content
+    texto_resposta = resposta.choices[0].message.content.strip()
 
-    fontes_usadas = list(dict.fromkeys(
-        limpar_nome_fonte(c["fonte"]) for c in chunks_relevantes
-    ))
+    # Detecta o marcador: se o modelo sinalizou que não achou a resposta no contexto.
+    if texto_resposta.startswith("SEM_CONTEXTO:"):
+        texto_resposta = texto_resposta.replace("SEM_CONTEXTO:", "", 1).strip()
+        fontes_usadas = []
+    else:
+        fontes_usadas = list(dict.fromkeys(
+            limpar_nome_fonte(c["fonte"]) for c in chunks_relevantes
+        ))
 
     return {
         "resposta": texto_resposta,
