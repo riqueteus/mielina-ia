@@ -1,12 +1,14 @@
 import os 
 import re
+from time import perf_counter
 
 from fastapi import APIRouter
 from pydantic import BaseModel
 
+from app.core.config import N_CANDIDATOS, TOP_K
+from app.core.debug_memoria import log_delta_memoria, log_memoria, log_tempo, memoria_atual_mb
 from app.services.embeddings import gerar_embeddings
 from app.services.vector_search import buscar_chunks_similares
-from app.services.reranker import reordenar_por_relevancia
 from app.core.groq_client import groq_client
 
 router = APIRouter(prefix="/pergunta", tags=["Pergunta"])
@@ -26,13 +28,23 @@ def limpar_nome_fonte(nome_arquivo: str) -> str:
 
 @router.post("")
 async def responder_pergunta(request: PerguntaRequest):
+    inicio_total = perf_counter()
+    memoria_inicio = memoria_atual_mb()
+    log_memoria("início da rota /pergunta")
+
     pergunta = request.pergunta
 
+    inicio_embedding = perf_counter()
+    memoria_antes_embedding = memoria_atual_mb()
     embedding_pergunta = gerar_embeddings([pergunta])[0]
+    log_delta_memoria("após gerar embedding da pergunta", memoria_antes_embedding)
+    log_tempo("geração do embedding da pergunta", inicio_embedding)
 
-    candidatos = buscar_chunks_similares(embedding_pergunta, n_candidatos=20)
+    inicio_busca = perf_counter()
+    candidatos = buscar_chunks_similares(embedding_pergunta, n_candidatos=N_CANDIDATOS)
+    log_tempo("busca vetorial no Supabase", inicio_busca)
 
-    chunks_relevantes = reordenar_por_relevancia(pergunta, candidatos)[:5]
+    chunks_relevantes = candidatos[:TOP_K]
 
     contexto = "\n\n---\n\n".join(
         f"[Fonte: {c['fonte']} | Tipo: {c['tipo']}]\n{c['texto']}"
@@ -64,11 +76,13 @@ PERGUNTA: {pergunta}
 
 RESPOSTA:"""
 
+    inicio_llm = perf_counter()
     resposta = groq_client.chat.completions.create(
         model="openai/gpt-oss-120b",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.3,
     )
+    log_tempo("geração da resposta no Groq", inicio_llm)
     texto_resposta = resposta.choices[0].message.content.strip()
 
     # Detecta o marcador: se o modelo sinalizou que não achou a resposta no contexto.
@@ -79,6 +93,9 @@ RESPOSTA:"""
         fontes_usadas = list(dict.fromkeys(
             limpar_nome_fonte(c["fonte"]) for c in chunks_relevantes
         ))
+
+    log_delta_memoria("fim da rota /pergunta", memoria_inicio)
+    log_tempo("tempo total da rota /pergunta", inicio_total)
 
     return {
         "resposta": texto_resposta,

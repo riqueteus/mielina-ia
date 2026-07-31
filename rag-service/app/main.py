@@ -1,5 +1,6 @@
 from fastapi import FastAPI
-from app.routers import ingest, pergunta  
+from app.core.config import ENABLE_INGEST_ROUTE
+from app.routers import pergunta  
 
 app = FastAPI(
     title="Mielina - RAG Service",
@@ -7,8 +8,12 @@ app = FastAPI(
     version="0.1.0",
 )
 
-app.include_router(ingest.router)
 app.include_router(pergunta.router)
+
+if ENABLE_INGEST_ROUTE:
+    from app.routers import ingest
+
+    app.include_router(ingest.router)
 
 @app.get("/health")
 
