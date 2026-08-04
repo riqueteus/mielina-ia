@@ -19,4 +19,4 @@ SUPABASE_SERVICE_ROLE_KEY = _obrigatorio(
 )
 
 SUPABASE_BUCKET = os.getenv("SUPABASE_BUCKET", "modelos-ia")
-MODELO_NOME_ARQUIVO = os.getenv("MODELO_NOME_ARQUIVO", "modelo_classificacao_em.joblib")
+MODELO_NOME_ARQUIVO = os.getenv("MODELO_NOME_ARQUIVO", "Regressao_logistica_class_em.joblib")
