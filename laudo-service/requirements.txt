@@ -1,0 +1,8 @@
+fastapi==0.139.2
+uvicorn==0.51.0
+pydantic==2.13.4
+python-dotenv==1.2.2
+pypdf==6.15.0
+groq==0.11.0
+supabase==2.31.0
+spacy==3.8.13
