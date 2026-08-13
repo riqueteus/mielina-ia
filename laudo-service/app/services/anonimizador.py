@@ -16,7 +16,7 @@ CAMPOS_NOME = re.compile(
     r"\b(?P<campo>NOME|SOLICITANTE|PACIENTE|M[ÉE]DICO RESPONS[ÁA]VEL|"
     r"M[ÉE]DICO EXECUTANTE|RADIOLOGISTA)\s*:\s*"
     r"(?P<valor>[A-Za-zÀ-ÖØ-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ\s\.]{2,}?)"
-    r"(?=\s+(?:PRONTU[ÁA]RIO|AN|CPF|RG|TELEFONE|DATA|SOLICITANTE|PACIENTE|RESSON|$))",
+    r"(?=\s+(?:PRONTU[ÁA]RIO|AN\b|CPF|RG|TELEFONE|DATA|SOLICITANTE|PACIENTE|RESSON|$))",
     re.IGNORECASE,
 )
 
@@ -33,9 +33,24 @@ CAMPOS_VALOR_NUMERICO = [
 PADROES_SOLTOS = [
     (re.compile(r"\b\d{3}\.\d{3}\.\d{3}-\d{2}\b"), "[CPF]"),
     (re.compile(r"\b\d{11}\b"), "[NUMERO_LONGO]"),
-    (re.compile(r"\b\(\d{2}\)\s?\d{4,5}-\d{4}\b"), "[TELEFONE]"),
-    (re.compile(r"\b[\w.\-]+@[\w.\-]+\.[A-Za-z]{2,}\b"), "[EMAIL]"),
+    (re.compile(r"\(\d{2}\)\s?\d{4,5}-\d{4}"), "[TELEFONE]"),
+    (re.compile(r"\b[\w.\-]+@[\w.\-]+\.[A-z]{2,}\b"), "[EMAIL]"),
 ]
+
+TERMOS_MEDICOS = {
+    "RESSONÂNCIA", "RESSONANCIA", "MAGNÉTICA", "MAGNETICA", "MAGNÉTICO", "MAGNETICO",
+    "CRÂNIO", "CRANIO", "ENCÉFALO", "ENCEFALO", "CEREBRAL", "COLUNA", "CERVICAL",
+    "TORÁCICA", "TORACICA", "LOMBAR", "SACRAL", "SACRO", "ÓRBITAS", "ORBITAS",
+    "TOMOGRAFIA", "RADIOGRAFIA", "MAMOGRAFIA", "ANGIOGRAFIA", "ULTRASSONOGRAFIA",
+    "DOPPLER", "FLAIR", "CONTRASTE", "GADOLÍNIO", "GADOLINIO", "SAGITAL", "AXIAL",
+    "CORONAL", "SEDAÇÃO", "SEDACAO", "PÉLVICA", "PELVICA", "PELVE", "ABDÔMEN",
+    "ABDOMEN", "PRÓSTATA", "PROSTATA", "MAMAS",
+}
+
+
+def _eh_termo_medico(entidade) -> bool:
+    palavras = re.findall(r"[A-Za-zÀ-ÖØ-öø-ÿ]+", entidade.text.upper())
+    return any(palavra in TERMOS_MEDICOS for palavra in palavras)
 
 
 def _aplicar_campos_numericos(texto: str) -> str:
@@ -62,6 +77,7 @@ def _anonimizar_nomes_livres(texto: str) -> str:
             if e.label_ == "PER"
             and len(e.text.strip()) >= 3
             and " " in e.text.strip()
+            and not _eh_termo_medico(e)
         ],
         key=lambda e: -e.start_char,
     )
