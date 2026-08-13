@@ -4,16 +4,23 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, UploadFile
 
 from app.services.anonimizador import anonimizar_texto
+from app.services.extractor_ia import ErroExtracaoLaudo, extrair_laudo
 from app.services.pdf_extractor import extrair_texto_pdf
 
 router = APIRouter(prefix="/laudos", tags=["Extração de Laudos"])
 
 
 @router.post("/extrair")
-async def extrair_laudo_de_pdf(arquivo: UploadFile):
-    """Recebe um PDF de laudo de RM e devolve o texto anonimizado."""
-    texto = _extrair_texto_do_pdf(arquivo)
-    return {"texto_anonimizado": anonimizar_texto(texto)}
+def extrair_laudo_de_pdf(arquivo: UploadFile):
+    """Recebe um PDF de laudo de RM e devolve o laudo estruturado anonimizado."""
+    texto_anonimizado = anonimizar_texto(_extrair_texto_do_pdf(arquivo))
+
+    try:
+        resultado = extrair_laudo(texto_anonimizado)
+    except ErroExtracaoLaudo as erro:
+        raise HTTPException(status_code=502, detail=str(erro))
+
+    return {"resultado": resultado}
 
 
 def _extrair_texto_do_pdf(arquivo: UploadFile) -> str:
@@ -35,4 +42,3 @@ def _extrair_texto_do_pdf(arquivo: UploadFile) -> str:
         raise HTTPException(status_code=400, detail=f"Falha ao extrair texto do PDF: {e}")
     finally:
         caminho_temp.unlink(missing_ok=True)
-
