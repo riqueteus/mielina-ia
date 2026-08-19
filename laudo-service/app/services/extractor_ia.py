@@ -76,7 +76,7 @@ MAPA DAS REGIÕES (classificação anatômica das lesões):
 Use o MAPA para classificar o campo `lesoes[].regiao` de cada lesão, com a melhor região que se enquadrar.
 
 SIGNIFICADO DOS CAMPOS:
-- identificacao_protocolo.data_exame: data do exame no formato AAAA-MM-DD. tipo_exame: título/nome do exame. regiao_examinada: região do exame (ex.: crânio/encéfalo, coluna cervical). indicacao_clinica: motivo clínico, se informado. tecnica: descreva a técnica/sequências citadas, mesmo que em prosa sem rótulo (ex.: parágrafo de abertura que descreve o protocolo).
+- identificacao_protocolo.data_exame: data do EXAME (NUNCA a de nascimento), no formato AAAA-MM-DD. A data costuma aparecer como "Data: 24/07/2021", "exame realizado em 24/07/2021", ou já em formato AAAA-MM-DD. Se houver data do exame no texto, SEMPRE preencha este campo, convertendo para AAAA-MM-DD (ex.: 24/07/2021 vira 2021-07-24); use null apenas se realmente não houver nenhuma data de exame. tipo_exame: título/nome do exame. regiao_examinada: região do exame (ex.: crânio/encéfalo, coluna cervical). indicacao_clinica: motivo clínico, se informado. tecnica: descreva a técnica/sequências citadas, mesmo que em prosa sem rótulo (ex.: parágrafo de abertura que descreve o protocolo).
 - atividade_inflamatoria.realce_gadolinio: true se o laudo relatar lesões com realce pelo contraste; false se afirmar que não há realce; senão null. `quantidade_lesoes_com_realce` e `padrao_realce` (ex.: nodular, anelar) somente se citados.
 - biomarcadores_avancados.sinal_veia_central e lesoes_anel_paramagnetico_prl: true/false/null conforme o laudo.
 - atrofia_achados_cronicos.atrofia_encefalica e buracos_negros_t1: true/false/null conforme o laudo.
